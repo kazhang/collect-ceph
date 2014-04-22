@@ -10,6 +10,8 @@ from flask import request
 from crossdomain import crossdomain
 
 app = Flask(__name__)
+NUM_PG = 128
+NUM_OSD = 3
 
 data = { 
         'read_op': [],
@@ -50,6 +52,8 @@ def setup():
     app.add_url_rule('/ceph/status', '/ceph/status', handle)
     app.add_url_rule('/ceph/osd/crush/rule/dump', '/ceph/osd/crush/rule/dump', handle)
     app.add_url_rule('/perf', '/perf', handle)
+    app.add_url_rule('/query/volume', '/query/volume', handle)
+    app.add_url_rule('/query/image', '/query/image', handle)
 
 name_dic = {#cluster information
             'read_op':'Read Times', 
@@ -124,6 +128,28 @@ def handle():
         osd_id = request.args.get('osd_id','0')
         perf = subprocess.check_output(['ceph', '--admin-daemon', '/var/run/ceph/ceph-osd.%s.asok' % osd_id, 'perf', 'dump'])
         resp = json.loads(perf)
+    elif ep[0] == 'query':
+        if ep[1] == 'volume':
+            rbd_name = ep[1] + '-' + request.args.get('id','')
+        else:
+            rbd_name = request.args.get('id','')
+        resp = dict()
+        pool_name = ep[1] + 's'
+        info = subprocess.check_output(['rbd', '-p', pool_name, 'info', rbd_name, '--format', 'json'])
+        info = json.loads(info)
+        num_obj = info['objects']
+        prefix = info['block_name_prefix']
+        pool_id = {'volumes':3, 'images':4}
+        pg_cnt = subprocess.check_output(['./obj-pg', '%d' % NUM_PG, '%d' % num_obj, prefix])
+        pg_cnt = json.loads(pg_cnt)
+        resp['pg_cnt'] = pg_cnt
+        osd_cnt = [0 for i in range(NUM_OSD)]
+        for i in range(NUM_PG):
+            pg_map = subprocess.check_output(['ceph', 'pg', 'map', '%d.%x' % (pool_id[pool_name], i), '--format', 'json'])
+            pg_map = json.loads(pg_map)
+            act_osd = pg_map['acting'][0]
+            osd_cnt[act_osd] += pg_cnt[i]
+        resp['osd_cnt'] = osd_cnt 
 
     return json.dumps(resp)
 
