@@ -12,6 +12,7 @@ from crossdomain import crossdomain
 app = Flask(__name__)
 NUM_PG = 128
 NUM_OSD = 3
+WATCHED_POOL = 'volumes'
 
 data = { 
         'read_op': [],
@@ -27,9 +28,12 @@ data = {
 def collect_data():
     data['pointStart'] = int(time.time()) * 1000
     data['pointInterval'] = 60 * 1000
-    pre_io = {'read_bytes': 0, 'read_kb': 0, 'write_bytes': 0, 'write_kb': 0}
+    res = subprocess.check_output(['rados', 'df', '-p', WATCHED_POOL, '--format', 'json'])
+    res = json.loads(res)
+    pre_io = res['pools'][0]['categories'][0]
     while True:
-        res = subprocess.check_output(['rados', 'df', '-p', 'volumes', '--format', 'json'])
+        time.sleep(60)
+        res = subprocess.check_output(['rados', 'df', '-p', WATCHED_POOL, '--format', 'json'])
         res = json.loads(res)
         data['space_used'].append(int(res['total_used']))
         data['space_avail'].append(int(res['total_avail']))
@@ -40,7 +44,6 @@ def collect_data():
         data['write_op'].append(int(io['write_bytes']) - int(pre_io['write_bytes']))
         data['write_bytes'].append(int(io['write_kb']) - int(pre_io['write_kb']))
         pre_io = io
-        time.sleep(60)
 
 def setup():
     app.add_url_rule('/chart/overview', '/chart/overview', handle)
