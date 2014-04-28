@@ -81,9 +81,11 @@ def handle():
             if ep[2] == 'tree':
                 osds = subprocess.check_output(['ceph', 'osd', 'dump', '--format', 'json'])
                 osds = json.loads(osds)['osds']
-                id_addr = dict()
+                id_info = dict()
                 for osd in osds:
-                    id_addr[osd['osd']] = osd['public_addr'].split(':',1)[0] 
+                    id_info[osd['osd']] = {'address':osd['public_addr'].split(':',1)[0],
+                                           'in':osd['in'],
+                                          }
 
                 osds = subprocess.check_output(['ceph', 'osd', 'tree', '--format', 'json'])
                 osd_nodes = json.loads(osds)['nodes']
@@ -91,7 +93,8 @@ def handle():
                 for node in osd_nodes:
                     id_node[node['id']] = node
                     if node['type'] == 'osd':
-                        node['address'] = id_addr[node['id']]
+                        node['address'] = id_info[node['id']]['address']
+                        node['in'] = id_info[node['id']]['in']
                     node['cid'] = node['id']
                     del node['id']
                 for node in osd_nodes:
