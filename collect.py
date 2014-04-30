@@ -55,8 +55,7 @@ def setup():
     app.add_url_rule('/ceph/status', '/ceph/status', handle)
     app.add_url_rule('/ceph/osd/crush/rule/dump', '/ceph/osd/crush/rule/dump', handle)
     app.add_url_rule('/perf', '/perf', handle)
-    app.add_url_rule('/query/volume', '/query/volume', handle)
-    app.add_url_rule('/query/image', '/query/image', handle)
+    app.add_url_rule('/query', '/query', handle)
 
 name_dic = {#cluster information
             'read_op':'Read Times', 
@@ -135,12 +134,13 @@ def handle():
         perf = subprocess.check_output(['ceph', '--admin-daemon', '/var/run/ceph/ceph-osd.%s.asok' % osd_id, 'perf', 'dump'])
         resp = json.loads(perf)
     elif ep[0] == 'query':
-        if ep[1] == 'volume':
-            rbd_name = ep[1] + '-' + request.args.get('id','')
+        query_type = request.args.get('type','')
+        if query_type == 'volume':
+            rbd_name = query_type + '-' + request.args.get('id','')
         else:
             rbd_name = request.args.get('id','')
         resp = dict()
-        pool_name = ep[1] + 's'
+        pool_name = query_type + 's'
         info = subprocess.check_output(['rbd', '-p', pool_name, 'info', rbd_name, '--format', 'json'])
         info = json.loads(info)
         num_obj = info['objects']
@@ -156,6 +156,7 @@ def handle():
             act_osd = pg_map['acting'][0]
             osd_cnt[act_osd] += pg_cnt[i]
         resp['osd_cnt'] = osd_cnt 
+        resp['pool_id'] = pool_id[pool_name];
 
     return json.dumps(resp)
 
