@@ -116,6 +116,11 @@ def handle():
                 resp['cpu_percent'] = psutil.cpu_percent()
                 resp['memory'] = psutil.virtual_memory()
                 resp['disk'] = psutil.disk_usage('/var/lib/ceph/osd/ceph-'+osd_id)
+                admin_socket = '/var/run/ceph/ceph-osd.%s.asok' % osd_id
+                perf = subprocess.check_output(['ceph', '--admin-daemon',admin_socket, 'perf', 'dump']) 
+                perf = json.loads(perf)
+                resp['numpg'] = perf['osd']['numpg']
+                resp['numpg_primary'] = perf['osd']['numpg_primary']
     elif ep[0] == 'ceph':
         command = ep
         command.append('--format')
