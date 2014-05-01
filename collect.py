@@ -11,7 +11,7 @@ from crossdomain import crossdomain
 
 app = Flask(__name__)
 NUM_PG = 128
-NUM_OSD = 3
+NUM_OSD = 4
 WATCHED_POOL = 'volumes'
 
 data = { 
