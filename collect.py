@@ -120,6 +120,12 @@ def handle():
                 perf = json.loads(perf)
                 resp['numpg'] = perf['osd']['numpg']
                 resp['numpg_primary'] = perf['osd']['numpg_primary']
+                osdmap = subprocess.check_output(['ceph', 'osd', 'dump', '--format', 'json'])
+                osdmap = json.loads(osdmap)
+                for osd in osdmap['osds']:
+                    if osd['osd'] == int(osd_id):
+                        resp['primary-affinity'] = osd['primary_affinity']
+                        break
     elif ep[0] == 'ceph':
         command = ep
         command.append('--format')
