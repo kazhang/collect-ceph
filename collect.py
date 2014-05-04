@@ -9,11 +9,9 @@ from flask import request
 
 from crossdomain import crossdomain
 
-app = Flask(__name__)
-NUM_PG = 128
-NUM_OSD = 4
-WATCHED_POOL = 'volumes'
+from constant import *
 
+app = Flask(__name__)
 data = { 
         'read_op': [],
         'write_op': [],
