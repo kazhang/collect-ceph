@@ -47,6 +47,7 @@ def setup():
     app.add_url_rule('/chart/overview', '/chart/overview', handle)
     app.add_url_rule('/chart/topology/osd', '/chart/topology/osd', handle)
     app.add_url_rule('/chart/topology/tree', '/chart/topology/tree', handle)
+    app.add_url_rule('/chart/topology/io', '/chart/topology/io', handle)
     app.add_url_rule('/host/cpu_percent', '/host/cpu_percent', handle)
     app.add_url_rule('/host/memory', '/host/memory', handle)
     app.add_url_rule('/host/disk', '/host/disk', handle)
@@ -124,6 +125,15 @@ def handle():
                     if osd['osd'] == int(osd_id):
                         resp['primary-affinity'] = osd['primary_affinity']
                         break
+            elif ep[2] == 'io':
+                osd_ids = request.args.get('osd_id')
+                osd_ids=osd_ids.split(',')
+                resp = dict()
+                for oid in osd_ids:
+                    admin_socket = '/var/run/ceph/ceph-osd.%s.asok' % oid
+                    perf = subprocess.check_output(['ceph', '--admin-daemon',admin_socket, 'perf', 'dump']) 
+                    perf = json.loads(perf)
+                    resp[oid] = perf['osd']['op']
     elif ep[0] == 'ceph':
         command = ep
         command.append('--format')
