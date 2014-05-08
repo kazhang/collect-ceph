@@ -133,7 +133,7 @@ def handle():
                     admin_socket = '/var/run/ceph/ceph-osd.%s.asok' % oid
                     perf = subprocess.check_output(['ceph', '--admin-daemon',admin_socket, 'perf', 'dump']) 
                     perf = json.loads(perf)
-                    resp[oid] = perf['osd']['op']
+                    resp[oid] = {'r' : perf['osd']['op_r'], 'w' : perf['osd']['op_w']}
     elif ep[0] == 'ceph':
         command = ep
         command.append('--format')
