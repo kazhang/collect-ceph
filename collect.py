@@ -181,5 +181,6 @@ def handle():
 
 if __name__ == '__main__':
     setup()
-    thread.start_new_thread(collect_data, ())
+    if COLLECT:
+        thread.start_new_thread(collect_data, ())
     app.run(host='0.0.0.0', port=2333, debug=True)
